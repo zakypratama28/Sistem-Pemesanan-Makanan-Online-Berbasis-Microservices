@@ -1,4 +1,4 @@
-*Perancangan dan Implementasi Sistem Pemesanan Makanan Online Berbasis Microservices Menggunakan Traefik API Gateway, REST API, WebSocket, dan Monitoring Container**
+*Perancangan dan Implementasi Sistem Pemesanan Makanan Online Berbasis Microservices Menggunakan Traefik API Gateway, REST API, WebSocket, dan Monitoring Container*
 
 berisi API Gateway Traefik, frontend statis, 11 backend service Node.js Express, PostgreSQL, Redis, Prometheus, Grafana, node-exporter, dan cAdvisor.
 
@@ -31,29 +31,6 @@ berisi API Gateway Traefik, frontend statis, 11 backend service Node.js Express,
 | realtime-service | `http://localhost/api/realtime/health` |
 | report-service | `http://localhost/api/reports/health` |
 
-Cek endpoint health service melalui Traefik:
-
-```powershell
-$endpoints = @(
-  "http://localhost/api/auth/health",
-  "http://localhost/api/users/health",
-  "http://localhost/api/restaurants/health",
-  "http://localhost/api/menus/health",
-  "http://localhost/api/cart/health",
-  "http://localhost/api/orders/health",
-  "http://localhost/api/payments/health",
-  "http://localhost/api/deliveries/health",
-  "http://localhost/api/notifications/health",
-  "http://localhost/api/realtime/health",
-  "http://localhost/api/reports/health"
-)
-
-$endpoints | ForEach-Object {
-  Write-Host "`nGET $_"
-  Invoke-RestMethod $_
-}
-```
-
 Akses dashboard:
 
 - Frontend: `http://localhost`
@@ -63,7 +40,7 @@ Akses dashboard:
 - cAdvisor: `http://localhost:8081`
 - node-exporter metrics: `http://localhost:9100/metrics`
 
-Fitur demo utama:
+Fitur utama:
 
 - Quick login Customer, Admin, dan Courier.
 - Token JWT disimpan di `localStorage` untuk request berikutnya.
@@ -85,7 +62,7 @@ Akun quick login:
 | Admin | `admin@foodorder.id` | `password` |
 | Courier | `raka@foodorder.id` | `password` |
 
-Alur demo yang disarankan:
+Alur demo:
 
 1. Buka `http://localhost`.
 2. Klik **Quick Login Customer**.
@@ -179,36 +156,6 @@ notifications
 ├── id, user_id → users, title, message, is_read, created_at
 ```
 
-### POST /api/auth/register
-
-Mendaftarkan user baru ke sistem.
-
-**Request Body:**
-```json
-{
-  "name": "Customer Baru",
-  "email": "customerbaru@foodorder.id",
-  "password": "password123",
-  "role": "CUSTOMER"
-}
-```
-
-Role yang diizinkan: `ADMIN`, `CUSTOMER`, `RESTAURANT_ADMIN`, `COURIER`
-
-
-```
-### POST /api/auth/login
-
-Login dan mendapatkan JWT token.
-
-**Request Body:**
-```json
-{
-  "email": "budi@foodorder.id",
-  "password": "password"
-}
-```
-
 **Akun seed tersedia:**
 
 | Email | Password | Role |
@@ -217,30 +164,6 @@ Login dan mendapatkan JWT token.
 | `budi@foodorder.id` | `password` | `CUSTOMER` |
 | `sari@foodorder.id` | `password` | `RESTAURANT_ADMIN` |
 | `raka@foodorder.id` | `password` | `COURIER` |
-
----
-
-### Workflow Lengkap (PowerShell)
-
-```powershell
-# 1. Login
-$resp = Invoke-RestMethod -Method Post `
-  -Uri http://localhost/api/auth/login `
-  -ContentType "application/json" `
-  -Body '{"email":"admin@foodorder.id","password":"password"}'
-$token = $resp.token
-Write-Host "Token: $token"
-
-# 2. Verify
-Invoke-RestMethod -Uri http://localhost/api/auth/verify `
-  -Headers @{ Authorization = "Bearer $token" } | ConvertTo-Json
-
-# 3. Register user baru
-Invoke-RestMethod -Method Post `
-  -Uri http://localhost/api/auth/register `
-  -ContentType "application/json" `
-  -Body '{"name":"Test User","email":"test@foodorder.id","password":"rahasia123","role":"CUSTOMER"}' | ConvertTo-Json
-```
 
 ---
 
@@ -308,17 +231,6 @@ Kami telah menerapkan *Grafana Provisioning* sehingga *datasource* dan *dashboar
    - **Host RAM Usage** (Bytes)
    - **Containers CPU Usage** (%)
    - **Containers RAM Usage** (Bytes)
-
-### Test Beban (Opsional)
-Untuk melihat grafik bergerak, Anda dapat menjalankan *endpoint* API berulang-ulang menggunakan PowerShell *loop* untuk mensimulasikan trafik jaringan:
-```powershell
-# Menjalankan 100 request public berurutan
-1..100 | ForEach-Object {
-    Invoke-RestMethod -Uri "http://localhost/api/restaurants"
-    Write-Host -NoNewline "."
-}
-```
-Grafik pada Grafana akan langsung melonjak setelah ~15 detik merespons trafik tersebut.
 
 ### Demo WebSocket Real-Time
 
