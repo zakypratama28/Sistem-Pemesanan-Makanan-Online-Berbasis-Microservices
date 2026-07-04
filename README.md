@@ -1,14 +1,8 @@
-# Sistem Pemesanan Makanan Online Berbasis Microservices
+*Perancangan dan Implementasi Sistem Pemesanan Makanan Online Berbasis Microservices Menggunakan Traefik API Gateway, REST API, WebSocket, dan Monitoring Container**
 
-Project AFL-3 Microservices Development:
+berisi API Gateway Traefik, frontend statis, 11 backend service Node.js Express, PostgreSQL, Redis, Prometheus, Grafana, node-exporter, dan cAdvisor.
 
-**Perancangan dan Implementasi Sistem Pemesanan Makanan Online Berbasis Microservices Menggunakan Traefik API Gateway, REST API, WebSocket, dan Monitoring Container**
-
-Skeleton ini berisi API Gateway Traefik, frontend statis, 11 backend service Node.js Express, PostgreSQL, Redis, Prometheus, Grafana, node-exporter, dan cAdvisor.
-
----
-
-## Arsitektur Awal
+# Arsitektur
 
 - Traefik menjadi API Gateway pada port `80`.
 - Dashboard Traefik tersedia pada port `8080`.
@@ -20,8 +14,6 @@ Skeleton ini berisi API Gateway Traefik, frontend statis, 11 backend service Nod
 - Grafana expose port `3001`.
 - cAdvisor expose port `8081`.
 - node-exporter expose port `9100`.
-
----
 
 ## Endpoint Health Via Traefik
 
@@ -38,28 +30,6 @@ Skeleton ini berisi API Gateway Traefik, frontend statis, 11 backend service Nod
 | notification-service | `http://localhost/api/notifications/health` |
 | realtime-service | `http://localhost/api/realtime/health` |
 | report-service | `http://localhost/api/reports/health` |
-
----
-
-## Menjalankan Project
-
-Salin konfigurasi environment:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Build dan jalankan semua container:
-
-```powershell
-docker compose up --build -d
-```
-
-Cek status container:
-
-```powershell
-docker compose ps
-```
 
 Cek endpoint health service melalui Traefik:
 
@@ -93,10 +63,6 @@ Akses dashboard:
 - cAdvisor: `http://localhost:8081`
 - node-exporter metrics: `http://localhost:9100/metrics`
 
-## Frontend Demo
-
-Frontend berada di `http://localhost` dan sudah dibuat sebagai single-page demo bernama **FoodOrder Microservices**. Halaman ini menggunakan HTML, CSS, dan JavaScript vanilla, serta semua request API tetap melewati Traefik di origin yang sama.
-
 Fitur demo utama:
 
 - Quick login Customer, Admin, dan Courier.
@@ -129,13 +95,6 @@ Alur demo yang disarankan:
 6. Login sebagai **Courier**, cek delivery, lalu update ke `ON_DELIVERY` dan `DELIVERED`.
 7. Amati panel **Realtime Events** dan timeline order yang ikut berubah.
 
-Hentikan semua container:
-
-```powershell
-docker compose down
-```
-
----
 
 ## Database PostgreSQL
 
@@ -174,8 +133,6 @@ Berikut akun yang tersedia setelah seed berhasil dijalankan:
 | Sari Restoran | `sari@foodorder.id` | `RESTAURANT_ADMIN` | *(dummy hash — belum aktif)* |
 | Raka Kurir | `raka@foodorder.id` | `COURIER` | *(dummy hash — belum aktif)* |
 
-> Password hash akan diganti dengan bcrypt yang valid pada tahap implementasi `auth-service`.
-
 ### Data Restoran Seed
 
 | Nama | Alamat | Status |
@@ -194,51 +151,6 @@ Berikut akun yang tersedia setelah seed berhasil dijalankan:
 | Kedai Padang Jaya | Ayam Pop | Rp 35.000 |
 | Kedai Padang Jaya | Gulai Ikan Tongkol | Rp 30.000 |
 
----
-
-## Cara Kerja Database Init
-
-PostgreSQL Docker image secara otomatis mengeksekusi semua file `*.sql` di dalam folder `/docker-entrypoint-initdb.d` (diurutkan secara alfabetis) **hanya saat volume pertama kali kosong**. File `01_init.sql` membuat tabel, kemudian `02_seed.sql` mengisi data awal.
-
----
-
-## Manajemen Database Volume
-
-### Reset database (hapus semua data dan inisialisasi ulang)
-
-Perintah ini menghapus volume `postgres-data` sehingga SQL init & seed akan dieksekusi ulang saat container dinyalakan kembali:
-
-```powershell
-# Hentikan container dan hapus volume
-docker compose down -v
-
-# Jalankan ulang (otomatis re-init & re-seed)
-docker compose up -d postgres
-```
-
-### Reset hanya PostgreSQL tanpa menghentikan service lain
-
-```powershell
-# Hentikan container postgres saja
-docker compose stop postgres
-
-# Hapus container dan volume postgres
-docker compose rm -f postgres
-docker volume rm food-ordering-microservices_postgres-data
-
-# Jalankan ulang postgres (re-init & re-seed otomatis)
-docker compose up -d postgres
-```
-
----
-
-## Mengecek Tabel PostgreSQL dari Dalam Container
-
-### Masuk ke shell PostgreSQL
-
-```powershell
-docker exec -it postgres psql -U food_user -d food_ordering_db
-```
 
 ### Perintah psql yang berguna
 
@@ -279,18 +191,6 @@ JOIN restaurants r ON r.id = m.restaurant_id;
 \q
 ```
 
-### Eksekusi query langsung dari PowerShell (tanpa masuk shell)
-
-```powershell
-# Cek semua user
-docker exec -it postgres psql -U food_user -d food_ordering_db -c "SELECT id, name, email, role FROM users;"
-
-# Cek semua tabel
-docker exec -it postgres psql -U food_user -d food_ordering_db -c "\dt"
-```
-
----
-
 ## Skema Database
 
 ```
@@ -321,9 +221,6 @@ deliveries
 notifications
 ├── id, user_id → users, title, message, is_read, created_at
 ```
-
-
----
 
 ## Auth Service — JWT API
 
@@ -376,9 +273,6 @@ Invoke-RestMethod -Method Post `
   }
 }
 ```
-
----
-
 ### POST /api/auth/login
 
 Login dan mendapatkan JWT token.
@@ -850,5 +744,3 @@ Grafik pada Grafana akan langsung melonjak setelah ~15 detik merespons trafik te
 | Tahap 6 | ✅ Selesai | Redis Pub/Sub, WebSocket realtime event broadcasting |
 | Tahap 7 | ✅ Selesai | user-service domain logic (Profil, Role) |
 | Tahap 8 | ✅ Selesai | Grafana & Prometheus monitoring dashboard (Provisioning Auto) |
-
-> Semua tahap pengembangan AFL-3 telah diselesaikan sesuai target fitur dan integrasi infrastruktur.
