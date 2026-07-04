@@ -188,14 +188,6 @@ Traefik dikonfigurasi dengan middleware `auth-forward` yang memanggil `http://au
 | `/api/notifications/*` | 🔒 Protected | Butuh JWT |
 | `/api/reports/*` | 🔒 Protected | Butuh JWT |
 
-### Header yang Diteruskan ke Service
-
-| Header | Isi |
-|--------|-----|
-| `X-User-Id` | ID user dari JWT payload |
-| `X-User-Email` | Email user dari JWT payload |
-| `X-User-Role` | Role user dari JWT payload |
-
 ---
 
 ## 📈 Monitoring Infrastruktur
@@ -212,12 +204,6 @@ Sistem telah dilengkapi dengan *stack* monitoring yang memonitor performa *Host*
 #### 1. Verifikasi Target Prometheus
 Buka URL di bawah pada *browser* untuk memastikan bahwa `node-exporter` dan `cadvisor` telah berstatus **UP**.
 > **URL**: [http://localhost:9090/targets](http://localhost:9090/targets)
-
-Bisa juga menggunakan PowerShell:
-```powershell
-$targets = Invoke-RestMethod -Uri "http://localhost:9090/api/v1/targets"
-$targets.data.activeTargets | Select-Object @{N="Job";E={$_.labels.job}}, health, lastScrape | Format-Table -AutoSize
-```
 
 #### 2. Akses Dashboard Grafana
 Kami telah menerapkan *Grafana Provisioning* sehingga *datasource* dan *dashboard* otomatis tersedia tanpa perlu konfigurasi manual.
@@ -238,5 +224,3 @@ Kami telah menerapkan *Grafana Provisioning* sehingga *datasource* dan *dashboar
 2. Pastikan status WebSocket **Connected**.
 3. Buka PowerShell dan jalankan skrip endpoint di atas secara berurutan (misal: Buat Order, Bayar Order, Update Status Order, Update Delivery).
 4. Lihat halaman frontend di browser, event akan muncul secara instan!
-
----
