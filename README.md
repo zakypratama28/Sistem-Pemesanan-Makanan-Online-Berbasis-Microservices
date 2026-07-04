@@ -117,9 +117,6 @@ File SQL berada di `database/init/` dan dieksekusi otomatis oleh PostgreSQL saat
 | `01_init.sql` | Membuat semua tabel dan index |
 | `02_seed.sql` | Mengisi data awal untuk development |
 
-> **Catatan:** File SQL hanya dieksekusi **satu kali** saat volume `postgres-data` **pertama kali dibuat**.
-> Jika volume sudah ada, file ini diabaikan.
-
 ---
 
 ## Data User Seed
@@ -150,46 +147,6 @@ Berikut akun yang tersedia setelah seed berhasil dijalankan:
 | Kedai Padang Jaya | Rendang Sapi | Rp 45.000 |
 | Kedai Padang Jaya | Ayam Pop | Rp 35.000 |
 | Kedai Padang Jaya | Gulai Ikan Tongkol | Rp 30.000 |
-
-
-### Perintah psql yang berguna
-
-```sql
--- Lihat semua tabel
-\dt
-
--- Lihat struktur tabel tertentu
-\d users
-\d orders
-
--- Hitung jumlah data per tabel
-SELECT 'users'         AS tabel, COUNT(*) FROM users
-UNION ALL
-SELECT 'restaurants',           COUNT(*) FROM restaurants
-UNION ALL
-SELECT 'menus',                 COUNT(*) FROM menus
-UNION ALL
-SELECT 'orders',                COUNT(*) FROM orders
-UNION ALL
-SELECT 'order_items',           COUNT(*) FROM order_items
-UNION ALL
-SELECT 'payments',              COUNT(*) FROM payments
-UNION ALL
-SELECT 'deliveries',            COUNT(*) FROM deliveries
-UNION ALL
-SELECT 'notifications',         COUNT(*) FROM notifications;
-
--- Lihat semua user seed
-SELECT id, name, email, role, created_at FROM users;
-
--- Lihat semua menu beserta nama restoran
-SELECT m.id, r.name AS restoran, m.name AS menu, m.price, m.stock
-FROM menus m
-JOIN restaurants r ON r.id = m.restaurant_id;
-
--- Keluar dari psql
-\q
-```
 
 ## Skema Database
 
@@ -222,20 +179,6 @@ notifications
 ├── id, user_id → users, title, message, is_read, created_at
 ```
 
-## Auth Service — JWT API
-
-Semua endpoint auth-service diakses melalui Traefik prefix `/api/auth`.
-
-### Konfigurasi JWT
-
-| Parameter | Nilai |
-|-----------|-------|
-| Secret | `JWT_SECRET` (dari `.env`) |
-| Algoritma | HS256 |
-| Expired | 1 hari |
-
----
-
 ### POST /api/auth/register
 
 Mendaftarkan user baru ke sistem.
@@ -252,26 +195,7 @@ Mendaftarkan user baru ke sistem.
 
 Role yang diizinkan: `ADMIN`, `CUSTOMER`, `RESTAURANT_ADMIN`, `COURIER`
 
-**PowerShell:**
-```powershell
-Invoke-RestMethod -Method Post `
-  -Uri http://localhost/api/auth/register `
-  -ContentType "application/json" `
-  -Body '{"name":"Customer Baru","email":"customerbaru@foodorder.id","password":"password123","role":"CUSTOMER"}'
-```
 
-**Response 201:**
-```json
-{
-  "message": "Registrasi berhasil.",
-  "user": {
-    "id": 5,
-    "name": "Customer Baru",
-    "email": "customerbaru@foodorder.id",
-    "role": "CUSTOMER",
-    "created_at": "2026-06-29T16:39:22.996Z"
-  }
-}
 ```
 ### POST /api/auth/login
 
@@ -285,33 +209,6 @@ Login dan mendapatkan JWT token.
 }
 ```
 
-**PowerShell:**
-```powershell
-$resp = Invoke-RestMethod -Method Post `
-  -Uri http://localhost/api/auth/login `
-  -ContentType "application/json" `
-  -Body '{"email":"budi@foodorder.id","password":"password"}'
-
-$resp | ConvertTo-Json -Depth 3
-
-# Simpan token ke variable
-$token = $resp.token
-```
-
-**Response 200:**
-```json
-{
-  "message": "Login berhasil.",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": 2,
-    "name": "Budi Pelanggan",
-    "email": "budi@foodorder.id",
-    "role": "CUSTOMER"
-  }
-}
-```
-
 **Akun seed tersedia:**
 
 | Email | Password | Role |
@@ -320,63 +217,6 @@ $token = $resp.token
 | `budi@foodorder.id` | `password` | `CUSTOMER` |
 | `sari@foodorder.id` | `password` | `RESTAURANT_ADMIN` |
 | `raka@foodorder.id` | `password` | `COURIER` |
-
----
-
-### GET /api/auth/verify
-
-Memvalidasi JWT token. Digunakan untuk Traefik ForwardAuth (implementasi tahap berikutnya).
-
-**PowerShell:**
-```powershell
-# Login dulu untuk mendapatkan token
-$resp = Invoke-RestMethod -Method Post `
-  -Uri http://localhost/api/auth/login `
-  -ContentType "application/json" `
-  -Body '{"email":"budi@foodorder.id","password":"password"}'
-$token = $resp.token
-
-# Verify token
-Invoke-RestMethod -Method Get `
-  -Uri http://localhost/api/auth/verify `
-  -Headers @{ Authorization = "Bearer $token" }
-```
-
-**Response 200 (token valid):**
-```json
-{
-  "valid": true,
-  "user": {
-    "id": 2,
-    "email": "budi@foodorder.id",
-    "role": "CUSTOMER"
-  }
-}
-```
-
-**Response headers yang disertakan (untuk ForwardAuth):**
-```
-X-User-Id: 2
-X-User-Email: budi@foodorder.id
-X-User-Role: CUSTOMER
-```
-
-**Response 401 (token tidak ada / invalid / expired):**
-```json
-{ "error": "Token tidak ditemukan." }
-{ "error": "Token tidak valid." }
-{ "error": "Token sudah kadaluarsa." }
-```
-
----
-
-### GET /api/auth/metrics
-
-Prometheus metrics endpoint.
-
-```powershell
-Invoke-RestMethod http://localhost/api/auth/metrics
-```
 
 ---
 
@@ -435,250 +275,7 @@ Traefik dikonfigurasi dengan middleware `auth-forward` yang memanggil `http://au
 
 ---
 
-### Pengujian ForwardAuth (PowerShell)
-
-#### 1. Akses endpoint protected tanpa token harus 401
-
-```powershell
-try {
-  Invoke-RestMethod http://localhost/api/orders
-} catch {
-  Write-Host "Status: $($_.Exception.Response.StatusCode.value__)"
-}
-# Expected: Status: 401
-```
-
-#### 2. Login untuk mendapatkan token
-
-```powershell
-$resp = Invoke-RestMethod -Method Post `
-  -Uri http://localhost/api/auth/login `
-  -ContentType "application/json" `
-  -Body '{"email":"budi@foodorder.id","password":"password"}'
-
-$token = $resp.token
-Write-Host "Token OK"
-```
-
-#### 3. Akses endpoint protected dengan token harus 200
-
-```powershell
-Invoke-RestMethod -Uri http://localhost/api/orders `
-  -Headers @{ Authorization = "Bearer $token" } | ConvertTo-Json
-
-# Expected:
-# {
-#   "service": "order-service",
-#   "status": "protected route reached",
-#   "user": { "id": "2", "email": "budi@foodorder.id", "role": "CUSTOMER" }
-# }
-```
-
-#### 4. Cek semua protected endpoint sekaligus
-
-```powershell
-$protected = @(
-  "http://localhost/api/users",
-  "http://localhost/api/cart",
-  "http://localhost/api/orders",
-  "http://localhost/api/payments",
-  "http://localhost/api/deliveries",
-  "http://localhost/api/notifications",
-  "http://localhost/api/reports"
-)
-
-$headers = @{ Authorization = "Bearer $token" }
-$protected | ForEach-Object {
-  $r = Invoke-RestMethod -Uri $_ -Headers $headers
-  Write-Host "$($r.service): $($r.status) | user=$($r.user.email)"
-}
-```
-
-#### 5. Public endpoint tetap bisa diakses tanpa token
-
-```powershell
-Invoke-RestMethod http://localhost/api/restaurants/health | ConvertTo-Json
-Invoke-RestMethod http://localhost/api/menus/health | ConvertTo-Json
-Invoke-RestMethod http://localhost/api/auth/health | ConvertTo-Json
-```
-
-#### 6. Token salah harus 401
-
-```powershell
-try {
-  Invoke-RestMethod -Uri http://localhost/api/orders `
-    -Headers @{ Authorization = "Bearer token_palsu_tidak_valid" }
-} catch {
-  Write-Host "Status: $($_.Exception.Response.StatusCode.value__)"
-}
----
-
-## Domain REST API — Tahap 5
-
-Semua contoh menggunakan PowerShell. Sesuaikan token dari hasil login.
-
-### 1. Login sebagai Customer
-
-```powershell
-$cust = Invoke-RestMethod -Method Post -Uri http://localhost/api/auth/login `
-  -ContentType "application/json" `
-  -Body '{"email":"budi@foodorder.id","password":"password"}'
-$custToken = $cust.token
-Write-Host "Customer token OK"
-```
-
-### 2. Login sebagai Admin
-
-```powershell
-$adm = Invoke-RestMethod -Method Post -Uri http://localhost/api/auth/login `
-  -ContentType "application/json" `
-  -Body '{"email":"admin@foodorder.id","password":"password"}'
-$admToken = $adm.token
-Write-Host "Admin token OK"
-```
-
-### 2a. Manajemen Profil (Tahap 7 - user-service)
-
-```powershell
-$hCust = @{ Authorization = "Bearer $custToken" }
-$hAdm = @{ Authorization = "Bearer $admToken" }
-
-# Lihat profil sendiri (CUSTOMER)
-Invoke-RestMethod -Uri http://localhost/api/users/me -Headers $hCust | ConvertTo-Json
-
-# Update nama sendiri
-$updateName = '{"name":"Budi Terupdate"}'
-Invoke-RestMethod -Method Patch -Uri http://localhost/api/users/me `
-  -ContentType "application/json" -Headers $hCust -Body $updateName | ConvertTo-Json
-
-# Lihat semua pengguna (ADMIN only)
-Invoke-RestMethod -Uri http://localhost/api/users -Headers $hAdm | ConvertTo-Json -Depth 4
-
-# Lihat detail satu pengguna (ADMIN only)
-Invoke-RestMethod -Uri http://localhost/api/users/2 -Headers $hAdm | ConvertTo-Json -Depth 4
-
-# Ubah role pengguna (ADMIN only)
-$updateRole = '{"role":"RESTAURANT_ADMIN"}'
-Invoke-RestMethod -Method Patch -Uri http://localhost/api/users/2/role `
-  -ContentType "application/json" -Headers $hAdm -Body $updateRole | ConvertTo-Json
-```
-
-### 3. Lihat Daftar Restoran (public, tanpa token)
-
-```powershell
-Invoke-RestMethod http://localhost/api/restaurants | ConvertTo-Json -Depth 3
-```
-
-### 4. Lihat Daftar Menu (public, tanpa token)
-
-```powershell
-# Semua menu
-Invoke-RestMethod http://localhost/api/menus | ConvertTo-Json -Depth 3
-
-# Menu by restoran
-Invoke-RestMethod http://localhost/api/menus/restaurant/1 | ConvertTo-Json -Depth 3
-```
-
-### 5. Tambah Item ke Cart (CUSTOMER)
-
-```powershell
-$hCust = @{ Authorization = "Bearer $custToken" }
-
-Invoke-RestMethod -Method Post -Uri http://localhost/api/cart `
-  -ContentType "application/json" -Headers $hCust `
-  -Body '{"menu_id":1,"quantity":2}' | ConvertTo-Json
-
-# Lihat cart
-Invoke-RestMethod -Uri http://localhost/api/cart -Headers $hCust | ConvertTo-Json -Depth 4
-```
-
-### 6. Buat Order (CUSTOMER)
-
-```powershell
-$orderBody = '{"restaurant_id":1,"items":[{"menu_id":1,"quantity":2},{"menu_id":3,"quantity":1}]}'
-
-$order = Invoke-RestMethod -Method Post -Uri http://localhost/api/orders `
-  -ContentType "application/json" -Headers $hCust -Body $orderBody
-$order | ConvertTo-Json -Depth 4
-$orderId = $order.data.id
-Write-Host "Order ID: $orderId"
-```
-
-### 7. Bayar Order (CUSTOMER)
-
-```powershell
-$payBody = "{`"order_id`":$orderId,`"payment_method`":`"QRIS`"}"
-
-Invoke-RestMethod -Method Post -Uri http://localhost/api/payments `
-  -ContentType "application/json" -Headers $hCust -Body $payBody | ConvertTo-Json
-```
-
-### 8. Update Status Order (ADMIN)
-
-```powershell
-$hAdm = @{ Authorization = "Bearer $admToken" }
-
-# Update ke COOKING
-$statusBody = '{"status":"COOKING"}'
-Invoke-RestMethod -Method Patch -Uri "http://localhost/api/orders/$orderId/status" `
-  -ContentType "application/json" -Headers $hAdm -Body $statusBody | ConvertTo-Json
-
-# Update ke READY
-Invoke-RestMethod -Method Patch -Uri "http://localhost/api/orders/$orderId/status" `
-  -ContentType "application/json" -Headers $hAdm `
-  -Body '{"status":"READY"}' | ConvertTo-Json
-```
-
-### 9. Lihat Notifikasi Customer
-
-```powershell
-Invoke-RestMethod -Uri http://localhost/api/notifications -Headers $hCust | ConvertTo-Json -Depth 4
-
-# Tandai notifikasi #1 sebagai read
-Invoke-RestMethod -Method Patch -Uri http://localhost/api/notifications/1/read `
-  -Headers $hCust | ConvertTo-Json
-```
-
-### 10. Lihat Report (ADMIN only)
-
-```powershell
-Invoke-RestMethod -Uri http://localhost/api/reports/summary -Headers $hAdm | ConvertTo-Json -Depth 4
-```
-
-### Endpoint Tambahan
-
-```powershell
-# Detail order
-Invoke-RestMethod -Uri "http://localhost/api/orders/$orderId" -Headers $hCust | ConvertTo-Json -Depth 5
-
-# Payment by order
-Invoke-RestMethod -Uri "http://localhost/api/payments/order/$orderId" -Headers $hCust | ConvertTo-Json
-
-# Delivery by order
-Invoke-RestMethod -Uri "http://localhost/api/deliveries/order/$orderId" -Headers $hCust | ConvertTo-Json
-
-# Update delivery status (ADMIN/COURIER)
-Invoke-RestMethod -Method Patch -Uri "http://localhost/api/deliveries/1/status" `
-  -ContentType "application/json" -Headers $hAdm `
-  -Body '{"status":"ON_DELIVERY"}' | ConvertTo-Json
-
-# Tambah restoran baru (ADMIN)
-Invoke-RestMethod -Method Post -Uri http://localhost/api/restaurants `
-  -ContentType "application/json" -Headers $hAdm `
-  -Body '{"name":"Bakso Pak Eko","address":"Jl. Mawar No.5","status":"OPEN"}' | ConvertTo-Json
-
-# Tambah menu baru (ADMIN/RESTAURANT_ADMIN)
-Invoke-RestMethod -Method Post -Uri http://localhost/api/menus `
-  -ContentType "application/json" -Headers $hAdm `
-  -Body '{"restaurant_id":1,"name":"Soto Ayam","description":"Soto ayam bening","price":20000,"stock":40}' | ConvertTo-Json
-
-# Hapus cart item
-Invoke-RestMethod -Method Delete -Uri "http://localhost/api/cart/1" -Headers $hCust | ConvertTo-Json
-```
-
----
-
-## 📈 Monitoring Infrastruktur (Tahap 8)
+## 📈 Monitoring Infrastruktur
 
 Sistem telah dilengkapi dengan *stack* monitoring yang memonitor performa *Host* maupun metrik *Container* menggunakan Prometheus dan Grafana.
 
@@ -723,7 +320,7 @@ Untuk melihat grafik bergerak, Anda dapat menjalankan *endpoint* API berulang-ul
 ```
 Grafik pada Grafana akan langsung melonjak setelah ~15 detik merespons trafik tersebut.
 
-### Demo WebSocket Real-Time (Tahap 6)
+### Demo WebSocket Real-Time
 
 1. Buka `http://localhost` di browser.
 2. Pastikan status WebSocket **Connected**.
@@ -731,16 +328,3 @@ Grafik pada Grafana akan langsung melonjak setelah ~15 detik merespons trafik te
 4. Lihat halaman frontend di browser, event akan muncul secara instan!
 
 ---
-
-## Catatan Scope
-
-| Tahap | Status | Keterangan |
-|-------|--------|-----------|
-| Tahap 1 | ✅ Selesai | Skeleton container, Traefik, semua `/health` endpoint aktif |
-| Tahap 2 | ✅ Selesai | Database init & seed PostgreSQL |
-| Tahap 3 | ✅ Selesai | auth-service: register, login (JWT + bcrypt), verify |
-| Tahap 4 | ✅ Selesai | Traefik ForwardAuth — proteksi JWT pada 7 endpoint |
-| Tahap 5 | ✅ Selesai | Domain REST API: restaurant, menu, cart, order, payment, delivery, notification, report |
-| Tahap 6 | ✅ Selesai | Redis Pub/Sub, WebSocket realtime event broadcasting |
-| Tahap 7 | ✅ Selesai | user-service domain logic (Profil, Role) |
-| Tahap 8 | ✅ Selesai | Grafana & Prometheus monitoring dashboard (Provisioning Auto) |
