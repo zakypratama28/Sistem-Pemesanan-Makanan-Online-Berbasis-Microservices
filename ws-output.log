@@ -1,0 +1,6 @@
+Connected to WebSocket!
+WS_READY
+Received: {"type":"CONNECTED","message":"Connected to realtime food order updates."}
+Received: {"type":"ORDER_CREATED","order_id":9,"user_id":2,"restaurant_id":1,"total_price":50000,"status":"PENDING","message":"Order #9 berhasil dibuat.","timestamp":"2026-06-30T16:28:39.790Z"}
+Received: {"type":"PAYMENT_SUCCESS","order_id":9,"user_id":2,"amount":50000,"payment_method":"EWALLET","status":"PAID","message":"Pembayaran Order #9 berhasil.","timestamp":"2026-06-30T16:28:39.820Z"}
+Received: {"type":"ORDER_STATUS_UPDATED","order_id":9,"user_id":2,"status":"COOKING","message":"Order #9 berubah menjadi status COOKING.","timestamp":"2026-06-30T16:28:39.842Z"}

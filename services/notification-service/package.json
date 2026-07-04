@@ -1,0 +1,12 @@
+{
+  "name": "notification-service",
+  "version": "1.0.0",
+  "description": "Notification service — food ordering microservices",
+  "main": "src/index.js",
+  "scripts": { "start": "node src/index.js" },
+  "dependencies": {
+    "dotenv": "16.4.5",
+    "express": "4.19.2",
+    "pg": "8.12.0"
+  }
+}

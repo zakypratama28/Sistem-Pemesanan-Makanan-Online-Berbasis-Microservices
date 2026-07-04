@@ -1,0 +1,484 @@
+name: food-ordering-microservices
+
+services:
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik
+    command:
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --ping=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+    labels:
+      # ── ForwardAuth middleware (global, didefinisikan di Traefik container) ──
+      - traefik.enable=true
+      - traefik.http.middlewares.auth-forward.forwardauth.address=http://auth-service:3000/verify
+      - traefik.http.middlewares.auth-forward.forwardauth.authResponseHeaders=X-User-Id,X-User-Email,X-User-Role
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend.rule=PathPrefix(`/`)
+      - traefik.http.routers.frontend.entrypoints=web
+      - traefik.http.services.frontend.loadbalancer.server.port=80
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+    container_name: auth-service
+    environment:
+      - SERVICE_NAME=auth-service
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-food_user}:${POSTGRES_PASSWORD:-food_password}@postgres:5432/${POSTGRES_DB:-food_ordering_db}
+      - JWT_SECRET=${JWT_SECRET:-afl3_food_ordering_secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.auth-service.rule=PathPrefix(`/api/auth`)
+      - traefik.http.routers.auth-service.entrypoints=web
+      - traefik.http.routers.auth-service.middlewares=auth-service-strip
+      - traefik.http.middlewares.auth-service-strip.stripprefix.prefixes=/api/auth
+      - traefik.http.services.auth-service.loadbalancer.server.port=3000
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  user-service:
+    build:
+      context: ./services/user-service
+    container_name: user-service
+    environment:
+      - SERVICE_NAME=user-service
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-food_user}:${POSTGRES_PASSWORD:-food_password}@postgres:5432/${POSTGRES_DB:-food_ordering_db}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.middlewares.auth-forward.forwardauth.address=http://auth-service:3000/verify
+      - traefik.http.middlewares.auth-forward.forwardauth.authResponseHeaders=X-User-Id,X-User-Email,X-User-Role
+      - traefik.http.routers.user-service.rule=PathPrefix(`/api/users`)
+      - traefik.http.routers.user-service.entrypoints=web
+      # chain: ForwardAuth terlebih dahulu, lalu strip prefix
+      - traefik.http.routers.user-service.middlewares=auth-forward,user-service-strip
+      - traefik.http.middlewares.user-service-strip.stripprefix.prefixes=/api/users
+      - traefik.http.services.user-service.loadbalancer.server.port=3000
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  restaurant-service:
+    build:
+      context: ./services/restaurant-service
+    container_name: restaurant-service
+    environment:
+      - SERVICE_NAME=restaurant-service
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-food_user}:${POSTGRES_PASSWORD:-food_password}@postgres:5432/${POSTGRES_DB:-food_ordering_db}
+      - JWT_SECRET=${JWT_SECRET:-afl3_food_ordering_secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.restaurant-service.rule=PathPrefix(`/api/restaurants`)
+      - traefik.http.routers.restaurant-service.entrypoints=web
+      - traefik.http.routers.restaurant-service.middlewares=restaurant-service-strip
+      - traefik.http.middlewares.restaurant-service-strip.stripprefix.prefixes=/api/restaurants
+      - traefik.http.services.restaurant-service.loadbalancer.server.port=3000
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  menu-service:
+    build:
+      context: ./services/menu-service
+    container_name: menu-service
+    environment:
+      - SERVICE_NAME=menu-service
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-food_user}:${POSTGRES_PASSWORD:-food_password}@postgres:5432/${POSTGRES_DB:-food_ordering_db}
+      - JWT_SECRET=${JWT_SECRET:-afl3_food_ordering_secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.menu-service.rule=PathPrefix(`/api/menus`)
+      - traefik.http.routers.menu-service.entrypoints=web
+      - traefik.http.routers.menu-service.middlewares=menu-service-strip
+      - traefik.http.middlewares.menu-service-strip.stripprefix.prefixes=/api/menus
+      - traefik.http.services.menu-service.loadbalancer.server.port=3000
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  cart-service:
+    build:
+      context: ./services/cart-service
+    container_name: cart-service
+    environment:
+      - SERVICE_NAME=cart-service
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-food_user}:${POSTGRES_PASSWORD:-food_password}@postgres:5432/${POSTGRES_DB:-food_ordering_db}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.cart-service.rule=PathPrefix(`/api/cart`)
+      - traefik.http.routers.cart-service.entrypoints=web
+      - traefik.http.routers.cart-service.middlewares=auth-forward,cart-service-strip
+      - traefik.http.middlewares.cart-service-strip.stripprefix.prefixes=/api/cart
+      - traefik.http.services.cart-service.loadbalancer.server.port=3000
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  order-service:
+    build:
+      context: ./services/order-service
+    container_name: order-service
+    environment:
+      - SERVICE_NAME=order-service
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-food_user}:${POSTGRES_PASSWORD:-food_password}@postgres:5432/${POSTGRES_DB:-food_ordering_db}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.order-service.rule=PathPrefix(`/api/orders`)
+      - traefik.http.routers.order-service.entrypoints=web
+      - traefik.http.routers.order-service.middlewares=auth-forward,order-service-strip
+      - traefik.http.middlewares.order-service-strip.stripprefix.prefixes=/api/orders
+      - traefik.http.services.order-service.loadbalancer.server.port=3000
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  payment-service:
+    build:
+      context: ./services/payment-service
+    container_name: payment-service
+    environment:
+      - SERVICE_NAME=payment-service
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-food_user}:${POSTGRES_PASSWORD:-food_password}@postgres:5432/${POSTGRES_DB:-food_ordering_db}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.payment-service.rule=PathPrefix(`/api/payments`)
+      - traefik.http.routers.payment-service.entrypoints=web
+      - traefik.http.routers.payment-service.middlewares=auth-forward,payment-service-strip
+      - traefik.http.middlewares.payment-service-strip.stripprefix.prefixes=/api/payments
+      - traefik.http.services.payment-service.loadbalancer.server.port=3000
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  delivery-service:
+    build:
+      context: ./services/delivery-service
+    container_name: delivery-service
+    environment:
+      - SERVICE_NAME=delivery-service
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-food_user}:${POSTGRES_PASSWORD:-food_password}@postgres:5432/${POSTGRES_DB:-food_ordering_db}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.delivery-service.rule=PathPrefix(`/api/deliveries`)
+      - traefik.http.routers.delivery-service.entrypoints=web
+      - traefik.http.routers.delivery-service.middlewares=auth-forward,delivery-service-strip
+      - traefik.http.middlewares.delivery-service-strip.stripprefix.prefixes=/api/deliveries
+      - traefik.http.services.delivery-service.loadbalancer.server.port=3000
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+    container_name: notification-service
+    environment:
+      - SERVICE_NAME=notification-service
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-food_user}:${POSTGRES_PASSWORD:-food_password}@postgres:5432/${POSTGRES_DB:-food_ordering_db}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.notification-service.rule=PathPrefix(`/api/notifications`)
+      - traefik.http.routers.notification-service.entrypoints=web
+      - traefik.http.routers.notification-service.middlewares=auth-forward,notification-service-strip
+      - traefik.http.middlewares.notification-service-strip.stripprefix.prefixes=/api/notifications
+      - traefik.http.services.notification-service.loadbalancer.server.port=3000
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  realtime-service:
+    build:
+      context: ./services/realtime-service
+    container_name: realtime-service
+    environment:
+      - SERVICE_NAME=realtime-service
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.realtime-service.rule=PathPrefix(`/api/realtime`)
+      - traefik.http.routers.realtime-service.entrypoints=web
+      - traefik.http.routers.realtime-service.service=realtime-service
+      - traefik.http.routers.realtime-service.middlewares=realtime-service-strip
+      - traefik.http.middlewares.realtime-service-strip.stripprefix.prefixes=/api/realtime
+      - traefik.http.routers.realtime-ws.rule=PathPrefix(`/ws`)
+      - traefik.http.routers.realtime-ws.entrypoints=web
+      - traefik.http.routers.realtime-ws.service=realtime-service
+      - traefik.http.services.realtime-service.loadbalancer.server.port=3000
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  report-service:
+    build:
+      context: ./services/report-service
+    container_name: report-service
+    environment:
+      - SERVICE_NAME=report-service
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-food_user}:${POSTGRES_PASSWORD:-food_password}@postgres:5432/${POSTGRES_DB:-food_ordering_db}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.report-service.rule=PathPrefix(`/api/reports`)
+      - traefik.http.routers.report-service.entrypoints=web
+      - traefik.http.routers.report-service.middlewares=auth-forward,report-service-strip
+      - traefik.http.middlewares.report-service-strip.stripprefix.prefixes=/api/reports
+      - traefik.http.services.report-service.loadbalancer.server.port=3000
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-food_ordering_db}
+      POSTGRES_USER: ${POSTGRES_USER:-food_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-food_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-food_user} -d $${POSTGRES_DB:-food_ordering_db}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  grafana:
+    image: grafana/grafana:11.1.4
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    privileged: true
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:

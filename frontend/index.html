@@ -1,0 +1,1741 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FoodOrder</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --bg: #fff8f1;
+        --surface: #ffffff;
+        --surface-2: #fffdf9;
+        --ink: #1e2428;
+        --muted: #69737d;
+        --line: #eadfd3;
+        --brand: #d8452e;
+        --brand-dark: #a52c1e;
+        --gold: #f2a33a;
+        --green: #28785f;
+        --green-soft: #dff3ea;
+        --blue: #2e6f9e;
+        --shadow: 0 18px 50px rgba(64, 43, 31, 0.12);
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        background:
+          linear-gradient(180deg, rgba(255, 248, 241, 0.94), rgba(249, 244, 235, 0.98)),
+          var(--bg);
+        color: var(--ink);
+      }
+
+      button, input, select {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.58;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .app-shell {
+        min-height: 100vh;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 14px clamp(18px, 4vw, 48px);
+        background: rgba(255, 253, 249, 0.92);
+        border-bottom: 1px solid rgba(234, 223, 211, 0.92);
+        backdrop-filter: blur(18px);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--brand), var(--gold));
+        color: #ffffff;
+        font-weight: 900;
+        box-shadow: 0 8px 20px rgba(216, 69, 46, 0.24);
+      }
+
+      .brand strong {
+        display: block;
+        font-size: 1rem;
+        letter-spacing: 0;
+      }
+
+      .brand span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.78rem;
+        margin-top: 1px;
+      }
+
+      .top-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .quick-link {
+        flex: 0 0 auto;
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 11px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        color: #3b464d;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .hero {
+        min-height: 520px;
+        display: grid;
+        align-items: end;
+        padding: clamp(72px, 12vw, 126px) clamp(18px, 4vw, 48px) 34px;
+        background:
+          linear-gradient(90deg, rgba(29, 24, 19, 0.78) 0%, rgba(29, 24, 19, 0.52) 42%, rgba(29, 24, 19, 0.12) 72%),
+          url("assets/hero-foodorder.png") center / cover no-repeat;
+        color: #ffffff;
+      }
+
+      .hero-inner {
+        width: min(1180px, 100%);
+        margin: 0 auto;
+      }
+
+      .hero-copy {
+        max-width: 660px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 11px;
+        border: 1px solid rgba(255, 255, 255, 0.32);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.14);
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+
+      h1 {
+        margin: 22px 0 16px;
+        font-size: clamp(2.5rem, 7vw, 5.9rem);
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+
+      .hero p {
+        width: min(590px, 100%);
+        margin: 0;
+        color: rgba(255, 255, 255, 0.88);
+        font-size: clamp(1rem, 2vw, 1.22rem);
+        line-height: 1.65;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 26px;
+      }
+
+      .btn {
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 16px;
+        border-radius: 8px;
+        background: #f3eee7;
+        color: var(--ink);
+        font-weight: 800;
+        transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn-primary {
+        background: var(--brand);
+        color: #ffffff;
+        box-shadow: 0 12px 28px rgba(216, 69, 46, 0.28);
+      }
+
+      .btn-primary:hover { background: var(--brand-dark); }
+      .btn-dark { background: #243039; color: #ffffff; }
+      .btn-green { background: var(--green); color: #ffffff; }
+      .btn-danger {
+        background: #fff0eb;
+        color: var(--brand-dark);
+        border: 1px solid #ffcfc2;
+      }
+
+      .btn-danger:hover {
+        background: #ffe2d9;
+      }
+
+      .btn-sm {
+        min-height: 34px;
+        padding: 0 11px;
+        font-size: 0.82rem;
+      }
+
+      .btn-outline {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        color: #ffffff;
+      }
+
+      .content {
+        width: min(1180px, calc(100% - 36px));
+        margin: -18px auto 56px;
+      }
+
+      .status-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .stat {
+        min-height: 88px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .stat span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .stat strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 1.2rem;
+      }
+
+      .dashboard {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(330px, 0.82fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .stack {
+        display: grid;
+        gap: 18px;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .panel-header h2 {
+        margin: 0;
+        font-size: 1.08rem;
+      }
+
+      .panel-header p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .panel-body {
+        padding: 18px;
+      }
+
+      .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .profile-field {
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-2);
+      }
+
+      .profile-field span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .profile-field strong {
+        display: block;
+        margin-top: 6px;
+        overflow-wrap: anywhere;
+      }
+
+      .filter-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .search {
+        width: min(360px, 100%);
+        min-height: 40px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+        color: var(--ink);
+      }
+
+      .restaurant-pills {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+      }
+
+      .pill {
+        flex: 0 0 auto;
+        min-height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: #3b464d;
+        font-weight: 800;
+      }
+
+      .pill.active {
+        border-color: rgba(216, 69, 46, 0.24);
+        background: #ffe7df;
+        color: var(--brand-dark);
+      }
+
+      .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .menu-card {
+        display: grid;
+        grid-template-columns: 78px minmax(0, 1fr);
+        gap: 14px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: linear-gradient(180deg, #ffffff, #fffaf4);
+      }
+
+      .food-thumb {
+        width: 78px;
+        aspect-ratio: 1;
+        border-radius: 8px;
+        background:
+          radial-gradient(circle at 58% 42%, #ffffff 0 8%, transparent 9%),
+          radial-gradient(circle at 45% 48%, #f5cf8b 0 24%, transparent 25%),
+          radial-gradient(circle at 51% 54%, #c6422f 0 36%, transparent 37%),
+          radial-gradient(circle at 50% 50%, #2f8a66 0 47%, #f6e7c8 48% 63%, #d7b07c 64% 100%);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.45), 0 8px 18px rgba(64,43,31,0.12);
+      }
+
+      .menu-card h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .menu-card p {
+        min-height: 42px;
+        margin: 6px 0 12px;
+        color: var(--muted);
+        line-height: 1.42;
+        font-size: 0.88rem;
+      }
+
+      .menu-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 25px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: #f3eee7;
+        color: #42505a;
+        font-size: 0.76rem;
+        font-weight: 800;
+      }
+
+      .badge.green { background: var(--green-soft); color: var(--green); }
+      .badge.red { background: #ffe4df; color: var(--brand-dark); }
+      .badge.blue { background: #e2f0fa; color: var(--blue); }
+      .badge.gold { background: #fff0d2; color: #8a5a0c; }
+
+      .card-bottom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .price {
+        font-weight: 900;
+        color: var(--brand-dark);
+      }
+
+      .cart-list,
+      .event-list,
+      .order-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .cart-item,
+      .event-item,
+      .order-row {
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-2);
+      }
+
+      .cart-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .cart-item-main {
+        min-width: 0;
+      }
+
+      .cart-item-main strong,
+      .cart-item-main span {
+        overflow-wrap: anywhere;
+      }
+
+      .cart-item-actions {
+        display: grid;
+        justify-items: end;
+        gap: 8px;
+      }
+
+      .cart-item strong,
+      .event-item strong,
+      .order-row strong {
+        display: block;
+      }
+
+      .cart-item span,
+      .event-item span,
+      .order-row span {
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .total-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+        font-weight: 900;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 8px;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 24px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        color: var(--muted);
+      }
+
+      .dot {
+        width: 16px;
+        height: 16px;
+        border: 3px solid #dbcbbb;
+        border-radius: 999px;
+        background: #ffffff;
+      }
+
+      .step.done,
+      .step.active {
+        color: var(--ink);
+        font-weight: 900;
+      }
+
+      .step.done .dot,
+      .step.active .dot {
+        border-color: var(--green);
+        background: var(--green);
+      }
+
+      .event-item {
+        border-left: 4px solid var(--gold);
+      }
+
+      .event-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+
+      .event-top span {
+        white-space: nowrap;
+      }
+
+      .inline-actions,
+      .form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .alert {
+        display: none;
+        margin: 0 0 14px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: 1px solid #ffd5c9;
+        background: #fff0eb;
+        color: #8a2e1f;
+        font-weight: 750;
+      }
+
+      .alert.show { display: block; }
+      .empty,
+      .loading {
+        padding: 18px;
+        border: 1px dashed #d8c9ba;
+        border-radius: 8px;
+        color: var(--muted);
+        text-align: center;
+        background: #fffaf4;
+      }
+
+      .report-box {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .report-metric {
+        padding: 12px;
+        border-radius: 8px;
+        background: #f6fbf8;
+        border: 1px solid #d9efe5;
+      }
+
+      .report-metric span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        font-weight: 800;
+      }
+
+      .report-metric strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 1.15rem;
+      }
+
+      .footer-space {
+        height: 20px;
+      }
+
+      @media (max-width: 980px) {
+        .dashboard {
+          grid-template-columns: 1fr;
+        }
+
+        .status-strip {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .menu-grid,
+        .profile-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .topbar {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 12px;
+          padding: 12px;
+        }
+
+        .top-actions {
+          justify-content: flex-start;
+          width: 100%;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          padding-bottom: 4px;
+          scrollbar-width: thin;
+        }
+
+        .hero {
+          min-height: 520px;
+          padding: 76px 18px 28px;
+          background:
+            linear-gradient(180deg, rgba(29, 24, 19, 0.82) 0%, rgba(29, 24, 19, 0.46) 72%, rgba(29, 24, 19, 0.22) 100%),
+            url("assets/hero-foodorder.png") center / cover no-repeat;
+        }
+
+        h1 {
+          font-size: clamp(2.35rem, 14vw, 4.2rem);
+        }
+
+        .content {
+          width: min(100% - 24px, 1180px);
+        }
+
+        .menu-card {
+          grid-template-columns: 64px minmax(0, 1fr);
+        }
+
+        .food-thumb {
+          width: 64px;
+        }
+
+        .filter-row,
+        .cart-item,
+        .panel-header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .cart-item {
+          grid-template-columns: 1fr;
+        }
+
+        .cart-item-actions {
+          width: 100%;
+          justify-items: stretch;
+        }
+
+        .filter-row,
+        .search,
+        .panel-header .btn {
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .hero {
+          min-height: 500px;
+        }
+
+        .hero-actions,
+        .inline-actions,
+        .form-actions {
+          width: 100%;
+        }
+
+        .hero-actions .btn,
+        .inline-actions .btn,
+        .form-actions .btn,
+        .inline-actions a.btn {
+          width: 100%;
+        }
+
+        .status-strip,
+        .report-box {
+          grid-template-columns: 1fr;
+        }
+
+        .panel-body {
+          padding: 14px;
+        }
+
+        .card-bottom,
+        .event-top {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .card-bottom .btn {
+          width: 100%;
+        }
+
+        .cart-item-actions .btn {
+          width: 100%;
+        }
+
+        .brand strong,
+        .brand span,
+        .quick-link,
+        .badge {
+          white-space: nowrap;
+        }
+      }
+
+      @media (max-width: 420px) {
+        .hero {
+          padding: 68px 14px 24px;
+          min-height: 470px;
+        }
+
+        .content {
+          width: min(100% - 16px, 1180px);
+          margin-top: -12px;
+        }
+
+        .menu-card {
+          grid-template-columns: 52px minmax(0, 1fr);
+          gap: 10px;
+          padding: 12px;
+        }
+
+        .food-thumb {
+          width: 52px;
+        }
+
+        .menu-card p {
+          min-height: 0;
+        }
+
+        .stat,
+        .panel-header,
+        .panel-body {
+          padding: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="FoodOrder Microservices">
+          <span>
+            <strong>FoodOrder</strong>
+          </span>
+        </a>
+        <nav class="top-actions" aria-label="Navigasi cepat">
+          <span id="wsStatus" class="badge red">WebSocket Disconnected</span>
+          <span id="sessionBadge" class="badge">Guest</span>
+          <a class="quick-link" href="http://localhost:8080/dashboard/" target="_blank" rel="noreferrer">Traefik</a>
+          <a class="quick-link" href="http://localhost:9090/targets" target="_blank" rel="noreferrer">Prometheus</a>
+          <a class="quick-link" href="http://localhost:3001/d/monitoring/system-monitoring-dashboard?orgId=1&refresh=10s" target="_blank" rel="noreferrer">Grafana</a>
+          <a class="quick-link" href="http://localhost:8081" target="_blank" rel="noreferrer">cAdvisor</a>
+        </nav>
+      </header>
+
+      <main id="top">
+        <section class="hero" aria-labelledby="heroTitle">
+          <div class="hero-inner">
+            <div class="hero-copy">
+              <span class="eyebrow">REST API, JWT, Redis WebSocket, Monitoring</span>
+              <h1 id="heroTitle">FoodOrder</h1>
+              <p>Satu halaman demo untuk menjalankan alur pemesanan makanan online berbasis microservices melalui Traefik, dari login sampai order realtime.</p>
+              <div class="hero-actions">
+                <button class="btn btn-outline" data-login="customer">Quick Login Customer</button>
+                <button class="btn btn-outline" data-login="admin">Quick Login Admin</button>
+                <button class="btn btn-outline" data-login="courier">Quick Login Courier</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="content">
+          <div id="alert" class="alert" role="alert"></div>
+
+          <div class="status-strip" aria-label="Ringkasan demo">
+            <div class="stat">
+              <span>Session</span>
+              <strong id="statSession">Belum login</strong>
+            </div>
+            <div class="stat">
+              <span>Restaurants</span>
+              <strong id="statRestaurants">0</strong>
+            </div>
+            <div class="stat">
+              <span>Cart Total</span>
+              <strong id="statCart">Rp 0</strong>
+            </div>
+            <div class="stat">
+              <span>Last Order</span>
+              <strong id="statOrder">-</strong>
+            </div>
+          </div>
+
+          <div class="dashboard">
+            <div class="stack">
+              <section class="panel" aria-labelledby="profileTitle">
+                <div class="panel-header">
+                  <div>
+                    <h2 id="profileTitle">Profil User</h2>
+                    <p>Data diambil dari user-service melalui ForwardAuth.</p>
+                  </div>
+                  <button id="refreshProfileBtn" class="btn">Refresh Profil</button>
+                </div>
+                <div class="panel-body">
+                  <div id="profileContent" class="empty">Login untuk melihat profil user.</div>
+                </div>
+              </section>
+
+              <section class="panel" aria-labelledby="menuTitle">
+                <div class="panel-header">
+                  <div>
+                    <h2 id="menuTitle">Restoran dan Menu</h2>
+                    <p>Menu public dari restaurant-service dan menu-service.</p>
+                  </div>
+                  <button id="refreshMenuBtn" class="btn">Refresh Menu</button>
+                </div>
+                <div class="panel-body">
+                  <div class="filter-row">
+                    <input id="menuSearch" class="search" type="search" placeholder="Cari menu atau restoran">
+                    <span id="menuCount" class="badge">0 menu</span>
+                  </div>
+                  <div id="restaurantPills" class="restaurant-pills"></div>
+                  <div id="menuGrid" class="menu-grid">
+                    <div class="loading">Memuat menu...</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel" aria-labelledby="ordersTitle">
+                <div class="panel-header">
+                  <div>
+                    <h2 id="ordersTitle">Order Tracking</h2>
+                    <p>Status order terakhir dan timeline visual untuk demo.</p>
+                  </div>
+                  <button id="refreshOrdersBtn" class="btn">Refresh Order</button>
+                </div>
+                <div class="panel-body">
+                  <div id="orderSummary" class="empty">Belum ada order aktif.</div>
+                  <div id="timeline" class="timeline" style="margin-top: 14px;"></div>
+                  <div class="inline-actions">
+                    <button id="payBtn" class="btn btn-primary" disabled>Bayar QRIS</button>
+                    <button id="loadDeliveryBtn" class="btn" disabled>Cek Delivery</button>
+                  </div>
+                </div>
+              </section>
+
+              <section id="adminPanel" class="panel" aria-labelledby="adminTitle" hidden>
+                <div class="panel-header">
+                  <div>
+                    <h2 id="adminTitle">Admin Panel</h2>
+                    <p>Update order dan lihat ringkasan report-service.</p>
+                  </div>
+                  <span class="badge red">ADMIN</span>
+                </div>
+                <div class="panel-body">
+                  <div class="inline-actions">
+                    <button class="btn btn-dark" data-admin-status="COOKING">Set COOKING</button>
+                    <button class="btn btn-dark" data-admin-status="READY">Set READY</button>
+                    <button id="loadReportBtn" class="btn btn-green">Lihat Report</button>
+                  </div>
+                  <div id="reportContent" class="empty" style="margin-top: 12px;">Report belum dimuat.</div>
+                </div>
+              </section>
+
+              <section id="courierPanel" class="panel" aria-labelledby="courierTitle" hidden>
+                <div class="panel-header">
+                  <div>
+                    <h2 id="courierTitle">Courier Action</h2>
+                    <p>Update delivery status untuk order aktif.</p>
+                  </div>
+                  <span class="badge green">COURIER</span>
+                </div>
+                <div class="panel-body">
+                  <div id="deliveryInfo" class="empty">Belum ada delivery aktif.</div>
+                  <div id="courierActions" class="inline-actions">
+                    <button class="btn btn-green" data-delivery-status="ON_DELIVERY" disabled>Set ON_DELIVERY</button>
+                    <button class="btn btn-green" data-delivery-status="DELIVERED" disabled>Set DELIVERED</button>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <aside class="stack">
+              <section class="panel" aria-labelledby="cartTitle">
+                <div class="panel-header">
+                  <div>
+                    <h2 id="cartTitle">Cart</h2>
+                    <p>Tambah menu, lihat cart, lalu buat order.</p>
+                  </div>
+                  <button id="refreshCartBtn" class="btn">Refresh</button>
+                </div>
+                <div class="panel-body">
+                  <div id="cartList" class="empty">Cart kosong.</div>
+                  <div class="total-row">
+                    <span>Total</span>
+                    <span id="cartTotal">Rp 0</span>
+                  </div>
+                  <div class="form-actions">
+                    <button id="createOrderBtn" class="btn btn-primary" disabled>Buat Order</button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel" aria-labelledby="eventTitle">
+                <div class="panel-header">
+                  <div>
+                    <h2 id="eventTitle">Realtime Events</h2>
+                    <p>Event terbaru muncul paling atas dari WebSocket /ws.</p>
+                  </div>
+                  <span id="eventCount" class="badge gold">0 event</span>
+                </div>
+                <div class="panel-body">
+                  <div id="eventList" class="event-list">
+                    <div class="empty">Menunggu event realtime.</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel" aria-labelledby="monitoringTitle">
+                <div class="panel-header">
+                  <div>
+                    <h2 id="monitoringTitle">Monitoring</h2>
+                    <p>Akses cepat stack observability.</p>
+                  </div>
+                </div>
+                <div class="panel-body">
+                  <div class="inline-actions" style="margin-top: 0;">
+                    <a class="btn" href="http://localhost:8080/dashboard/" target="_blank" rel="noreferrer">Traefik Dashboard</a>
+                    <a class="btn" href="http://localhost:9090/targets" target="_blank" rel="noreferrer">Prometheus Targets</a>
+                    <a class="btn" href="http://localhost:3001/d/monitoring/system-monitoring-dashboard?orgId=1&refresh=10s" target="_blank" rel="noreferrer">Grafana</a>
+                    <a class="btn" href="http://localhost:8081" target="_blank" rel="noreferrer">cAdvisor</a>
+                  </div>
+                </div>
+              </section>
+            </aside>
+          </div>
+          <div class="footer-space"></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const state = {
+        token: localStorage.getItem('foodorder_token') || '',
+        user: JSON.parse(localStorage.getItem('foodorder_user') || 'null'),
+        restaurants: [],
+        menus: [],
+        cart: [],
+        activeRestaurant: 'all',
+        search: '',
+        lastOrder: JSON.parse(localStorage.getItem('foodorder_last_order') || 'null'),
+        payment: null,
+        delivery: null,
+        events: []
+      };
+
+      const demoUsers = {
+        customer: { email: 'budi@foodorder.id', password: 'password' },
+        admin: { email: 'admin@foodorder.id', password: 'password' },
+        courier: { email: 'raka@foodorder.id', password: 'password' }
+      };
+
+      const steps = ['CREATED', 'PAID', 'COOKING', 'READY', 'ON_DELIVERY', 'DELIVERED'];
+      const statusRank = {
+        CREATED: 0,
+        PENDING: 0,
+        PAID: 1,
+        COOKING: 2,
+        READY: 3,
+        ON_DELIVERY: 4,
+        DELIVERED: 5
+      };
+
+      const el = (id) => document.getElementById(id);
+      const formatRp = (value) => `Rp ${Number(value || 0).toLocaleString('id-ID')}`;
+      const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[char]));
+
+      function showAlert(message) {
+        const box = el('alert');
+        box.textContent = message;
+        box.classList.add('show');
+        window.clearTimeout(showAlert.timer);
+        showAlert.timer = window.setTimeout(() => box.classList.remove('show'), 5200);
+      }
+
+      function authHeaders() {
+        return state.token ? { Authorization: `Bearer ${state.token}` } : {};
+      }
+
+      async function api(path, options = {}) {
+        const headers = {
+          ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+          ...authHeaders(),
+          ...(options.headers || {})
+        };
+        const response = await fetch(path, { ...options, headers });
+        const text = await response.text();
+        let data = null;
+        if (text) {
+          try { data = JSON.parse(text); } catch { data = text; }
+        }
+        if (!response.ok) {
+          const message = data?.error || data?.message || `Request gagal: ${response.status}`;
+          throw new Error(message);
+        }
+        return data;
+      }
+
+      function setLoading(button, loading) {
+        if (!button) return;
+        button.disabled = loading;
+        button.dataset.originalText = button.dataset.originalText || button.textContent;
+        button.textContent = loading ? 'Loading...' : button.dataset.originalText;
+      }
+
+      function getOrderStatus() {
+        return state.lastOrder?.status || '';
+      }
+
+      function getDeliveryStatus() {
+        return state.delivery?.status || '';
+      }
+
+      function isFinalStatus(status) {
+        return ['DELIVERED', 'CANCELLED'].includes(status);
+      }
+
+      function canPayOrder() {
+        return state.user?.role === 'CUSTOMER' && ['PENDING', 'CREATED'].includes(getOrderStatus());
+      }
+
+      function canAdminSetStatus(status) {
+        const current = getOrderStatus();
+        if (state.user?.role !== 'ADMIN' || !state.lastOrder?.id || isFinalStatus(current)) return false;
+        if (status === 'COOKING') return current === 'PAID';
+        if (status === 'READY') return current === 'COOKING';
+        return false;
+      }
+
+      function canCourierSetStatus(status) {
+        const orderStatus = getOrderStatus();
+        const deliveryStatus = getDeliveryStatus();
+        if (state.user?.role !== 'COURIER' || !state.delivery?.id || isFinalStatus(orderStatus) || deliveryStatus === 'DELIVERED') {
+          return false;
+        }
+        if (status === 'ON_DELIVERY') return orderStatus === 'READY' && !['ON_DELIVERY', 'DELIVERED'].includes(deliveryStatus);
+        if (status === 'DELIVERED') return orderStatus === 'ON_DELIVERY' || deliveryStatus === 'ON_DELIVERY';
+        return false;
+      }
+
+      function syncAdminActions() {
+        document.querySelectorAll('[data-admin-status]').forEach((button) => {
+          button.disabled = !canAdminSetStatus(button.dataset.adminStatus);
+        });
+      }
+
+      function syncCourierActions() {
+        const actions = el('courierActions');
+        const showActions = state.user?.role === 'COURIER' && state.delivery?.id && getDeliveryStatus() !== 'DELIVERED' && !isFinalStatus(getOrderStatus());
+        if (actions) actions.hidden = !showActions;
+        document.querySelectorAll('[data-delivery-status]').forEach((button) => {
+          button.disabled = !canCourierSetStatus(button.dataset.deliveryStatus);
+        });
+      }
+
+      function syncOrderActions() {
+        el('payBtn').disabled = !canPayOrder();
+        el('loadDeliveryBtn').disabled = !state.lastOrder?.id;
+        syncAdminActions();
+        syncCourierActions();
+      }
+
+      async function quickLogin(type, button) {
+        try {
+          setLoading(button, true);
+          const account = demoUsers[type];
+          const data = await api('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify(account)
+          });
+          state.token = data.token;
+          state.user = data.user;
+          localStorage.setItem('foodorder_token', state.token);
+          localStorage.setItem('foodorder_user', JSON.stringify(state.user));
+          renderSession();
+          await Promise.allSettled([loadProfile(), loadCart(), loadOrders()]);
+          showAlert(`Login berhasil sebagai ${state.user.role}.`);
+        } catch (error) {
+          showAlert(error.message);
+        } finally {
+          setLoading(button, false);
+        }
+      }
+
+      async function loadProfile() {
+        if (!state.token) {
+          renderProfile();
+          return;
+        }
+        try {
+          const data = await api('/api/users/me');
+          state.user = data.data;
+          localStorage.setItem('foodorder_user', JSON.stringify(state.user));
+          renderSession();
+          renderProfile();
+        } catch (error) {
+          showAlert(error.message);
+          renderProfile();
+        }
+      }
+
+      async function loadRestaurantsAndMenus() {
+        el('menuGrid').innerHTML = '<div class="loading">Memuat menu...</div>';
+        try {
+          const [restaurants, menus] = await Promise.all([
+            api('/api/restaurants'),
+            api('/api/menus')
+          ]);
+          state.restaurants = restaurants.data || [];
+          state.menus = menus.data || [];
+          renderRestaurants();
+          renderMenus();
+          renderStats();
+        } catch (error) {
+          el('menuGrid').innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+        }
+      }
+
+      async function loadCart() {
+        if (!state.token || state.user?.role !== 'CUSTOMER') {
+          state.cart = [];
+          renderCart();
+          return;
+        }
+        try {
+          const data = await api('/api/cart');
+          state.cart = data.data || [];
+          state.cartTotal = data.grand_total || 0;
+          renderCart();
+        } catch (error) {
+          showAlert(error.message);
+          renderCart();
+        }
+      }
+
+      async function addToCart(menuId, button) {
+        if (!state.token) {
+          showAlert('Login sebagai CUSTOMER untuk menambahkan menu ke cart.');
+          return;
+        }
+        if (state.user?.role !== 'CUSTOMER') {
+          showAlert('Cart hanya tersedia untuk role CUSTOMER.');
+          return;
+        }
+        try {
+          setLoading(button, true);
+          await api('/api/cart', {
+            method: 'POST',
+            body: JSON.stringify({ menu_id: Number(menuId), quantity: 1 })
+          });
+          await loadCart();
+          showAlert('Menu berhasil ditambahkan ke cart.');
+        } catch (error) {
+          showAlert(error.message);
+        } finally {
+          setLoading(button, false);
+        }
+      }
+
+      async function removeFromCart(cartId, button) {
+        if (!state.token || state.user?.role !== 'CUSTOMER') {
+          showAlert('Login sebagai CUSTOMER untuk menghapus item cart.');
+          return;
+        }
+
+        try {
+          setLoading(button, true);
+          await api(`/api/cart/${cartId}`, { method: 'DELETE' });
+          await loadCart();
+          showAlert('Item cart berhasil dihapus.');
+        } catch (error) {
+          showAlert(error.message);
+        } finally {
+          setLoading(button, false);
+        }
+      }
+
+      async function createOrder() {
+        if (!state.cart.length) {
+          showAlert('Cart masih kosong.');
+          return;
+        }
+
+        const enriched = state.cart.map((item) => ({
+          ...item,
+          menu: state.menus.find((menu) => Number(menu.id) === Number(item.menu_id))
+        })).filter((item) => item.menu);
+
+        if (!enriched.length) {
+          showAlert('Data menu belum lengkap. Refresh menu lalu coba lagi.');
+          return;
+        }
+
+        const restaurantId = enriched[0].menu.restaurant_id;
+        const sameRestaurant = enriched.filter((item) => Number(item.menu.restaurant_id) === Number(restaurantId));
+
+        if (sameRestaurant.length !== enriched.length) {
+          showAlert('Order dibuat dari restoran pertama di cart. Backend menerima satu restoran per order.');
+        }
+
+        try {
+          setLoading(el('createOrderBtn'), true);
+          const payload = {
+            restaurant_id: Number(restaurantId),
+            items: sameRestaurant.map((item) => ({
+              menu_id: Number(item.menu_id),
+              quantity: Number(item.quantity)
+            }))
+          };
+          const data = await api('/api/orders', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+          state.lastOrder = data.data;
+          state.lastOrder.status = state.lastOrder.status || 'PENDING';
+          state.payment = null;
+          state.delivery = null;
+          localStorage.setItem('foodorder_last_order', JSON.stringify(state.lastOrder));
+          renderOrder();
+          await loadCart();
+          await loadDelivery();
+          showAlert(`Order #${state.lastOrder.id} berhasil dibuat.`);
+        } catch (error) {
+          showAlert(error.message);
+        } finally {
+          setLoading(el('createOrderBtn'), false);
+        }
+      }
+
+      async function loadOrders() {
+        if (!state.token) {
+          renderOrder();
+          return;
+        }
+        try {
+          const data = await api('/api/orders');
+          const orders = data.data || [];
+          if (orders.length) {
+            const current = state.lastOrder?.id
+              ? orders.find((order) => Number(order.id) === Number(state.lastOrder.id))
+              : null;
+            state.lastOrder = current || orders[0];
+            localStorage.setItem('foodorder_last_order', JSON.stringify(state.lastOrder));
+          }
+          renderOrder();
+          await loadDelivery();
+        } catch {
+          renderOrder();
+        }
+      }
+
+      async function payOrder() {
+        if (!state.lastOrder?.id) return;
+        if (!canPayOrder()) {
+          showAlert('Pembayaran hanya tersedia untuk order baru yang belum dibayar.');
+          syncOrderActions();
+          return;
+        }
+        try {
+          setLoading(el('payBtn'), true);
+          const data = await api('/api/payments', {
+            method: 'POST',
+            body: JSON.stringify({ order_id: Number(state.lastOrder.id), payment_method: 'QRIS' })
+          });
+          state.payment = data.data;
+          state.lastOrder.status = 'PAID';
+          localStorage.setItem('foodorder_last_order', JSON.stringify(state.lastOrder));
+          renderOrder();
+          showAlert('Pembayaran QRIS berhasil.');
+        } catch (error) {
+          showAlert(error.message);
+        } finally {
+          setLoading(el('payBtn'), false);
+          syncOrderActions();
+        }
+      }
+
+      async function adminUpdateStatus(status, button) {
+        if (!state.lastOrder?.id) {
+          showAlert('Belum ada order aktif.');
+          return;
+        }
+        if (!canAdminSetStatus(status)) {
+          showAlert('Aksi admin tidak tersedia untuk status order saat ini.');
+          syncAdminActions();
+          return;
+        }
+        try {
+          setLoading(button, true);
+          await api(`/api/orders/${state.lastOrder.id}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status })
+          });
+          state.lastOrder.status = status;
+          localStorage.setItem('foodorder_last_order', JSON.stringify(state.lastOrder));
+          renderOrder();
+          showAlert(`Status order diubah ke ${status}.`);
+        } catch (error) {
+          showAlert(error.message);
+        } finally {
+          setLoading(button, false);
+          syncAdminActions();
+        }
+      }
+
+      async function loadDelivery() {
+        const buttons = document.querySelectorAll('[data-delivery-status]');
+        buttons.forEach((button) => { button.disabled = true; });
+        if (!state.lastOrder?.id || !state.token) {
+          renderDelivery();
+          return;
+        }
+        try {
+          const data = await api(`/api/deliveries/order/${state.lastOrder.id}`);
+          state.delivery = data.data;
+          if (['ON_DELIVERY', 'DELIVERED'].includes(state.delivery?.status) && state.lastOrder) {
+            state.lastOrder.status = state.delivery.status;
+            localStorage.setItem('foodorder_last_order', JSON.stringify(state.lastOrder));
+          }
+          renderDelivery();
+          renderOrder();
+        } catch {
+          state.delivery = null;
+          renderDelivery();
+        }
+      }
+
+      async function courierUpdateStatus(status, button) {
+        if (!state.delivery?.id) {
+          showAlert('Delivery belum ditemukan untuk order aktif.');
+          return;
+        }
+        if (!canCourierSetStatus(status)) {
+          showAlert('Aksi kurir tidak tersedia untuk status pengiriman saat ini.');
+          syncCourierActions();
+          return;
+        }
+        try {
+          setLoading(button, true);
+          await api(`/api/deliveries/${state.delivery.id}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status })
+          });
+          state.delivery.status = status;
+          state.lastOrder.status = status;
+          localStorage.setItem('foodorder_last_order', JSON.stringify(state.lastOrder));
+          renderDelivery();
+          renderOrder();
+          showAlert(`Delivery diubah ke ${status}.`);
+        } catch (error) {
+          showAlert(error.message);
+        } finally {
+          setLoading(button, false);
+          syncCourierActions();
+        }
+      }
+
+      async function loadReport() {
+        try {
+          setLoading(el('loadReportBtn'), true);
+          const data = await api('/api/reports/summary');
+          renderReport(data.data);
+        } catch (error) {
+          showAlert(error.message);
+        } finally {
+          setLoading(el('loadReportBtn'), false);
+        }
+      }
+
+      function renderSession() {
+        const badge = el('sessionBadge');
+        const stat = el('statSession');
+        if (state.user) {
+          badge.textContent = `${state.user.name || state.user.email} / ${state.user.role}`;
+          badge.className = `badge ${state.user.role === 'ADMIN' ? 'red' : state.user.role === 'COURIER' ? 'green' : 'blue'}`;
+          stat.textContent = state.user.role;
+        } else {
+          badge.textContent = 'Guest';
+          badge.className = 'badge';
+          stat.textContent = 'Belum login';
+        }
+        el('adminPanel').hidden = state.user?.role !== 'ADMIN';
+        el('courierPanel').hidden = state.user?.role !== 'COURIER';
+        syncOrderActions();
+      }
+
+      function renderProfile() {
+        const target = el('profileContent');
+        if (!state.user) {
+          target.className = 'empty';
+          target.textContent = 'Login untuk melihat profil user.';
+          return;
+        }
+        target.className = 'profile-grid';
+        target.innerHTML = `
+          <div class="profile-field"><span>Nama</span><strong>${escapeHtml(state.user.name || '-')}</strong></div>
+          <div class="profile-field"><span>Email</span><strong>${escapeHtml(state.user.email || '-')}</strong></div>
+          <div class="profile-field"><span>Role</span><strong>${escapeHtml(state.user.role || '-')}</strong></div>
+        `;
+      }
+
+      function renderRestaurants() {
+        const wrapper = el('restaurantPills');
+        const allButton = `<button class="pill ${state.activeRestaurant === 'all' ? 'active' : ''}" data-restaurant="all">Semua</button>`;
+        const pills = state.restaurants.map((restaurant) => `
+          <button class="pill ${String(state.activeRestaurant) === String(restaurant.id) ? 'active' : ''}" data-restaurant="${restaurant.id}">
+            ${escapeHtml(restaurant.name)}
+          </button>
+        `).join('');
+        wrapper.innerHTML = allButton + pills;
+      }
+
+      function renderMenus() {
+        const query = state.search.trim().toLowerCase();
+        const filtered = state.menus.filter((menu) => {
+          const byRestaurant = state.activeRestaurant === 'all' || String(menu.restaurant_id) === String(state.activeRestaurant);
+          const haystack = `${menu.name} ${menu.description || ''} ${menu.restaurant_name || ''}`.toLowerCase();
+          return byRestaurant && (!query || haystack.includes(query));
+        });
+        el('menuCount').textContent = `${filtered.length} menu`;
+        if (!filtered.length) {
+          el('menuGrid').innerHTML = '<div class="empty">Menu tidak ditemukan.</div>';
+          return;
+        }
+        el('menuGrid').innerHTML = filtered.map((menu) => `
+          <article class="menu-card">
+            <div class="food-thumb" aria-hidden="true"></div>
+            <div>
+              <h3>${escapeHtml(menu.name)}</h3>
+              <p>${escapeHtml(menu.description || 'Menu favorit restoran.')}</p>
+              <div class="menu-meta">
+                <span class="badge blue">${escapeHtml(menu.restaurant_name || 'Restoran')}</span>
+                <span class="badge ${Number(menu.stock) > 0 ? 'green' : 'red'}">Stok ${Number(menu.stock || 0)}</span>
+              </div>
+              <div class="card-bottom">
+                <span class="price">${formatRp(menu.price)}</span>
+                <button class="btn btn-primary" data-add-cart="${menu.id}" ${Number(menu.stock) < 1 ? 'disabled' : ''}>Tambah</button>
+              </div>
+            </div>
+          </article>
+        `).join('');
+      }
+
+      function renderCart() {
+        const wrapper = el('cartList');
+        const total = state.cart.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+        state.cartTotal = total;
+        if (!state.token) {
+          wrapper.className = 'empty';
+          wrapper.textContent = 'Login sebagai CUSTOMER untuk memakai cart.';
+        } else if (state.user?.role !== 'CUSTOMER') {
+          wrapper.className = 'empty';
+          wrapper.textContent = 'Cart hanya tampil untuk role CUSTOMER.';
+        } else if (!state.cart.length) {
+          wrapper.className = 'empty';
+          wrapper.textContent = 'Cart kosong.';
+        } else {
+          wrapper.className = 'cart-list';
+          wrapper.innerHTML = state.cart.map((item) => `
+            <div class="cart-item">
+              <div class="cart-item-main">
+                <strong>${escapeHtml(item.menu_name)}</strong>
+                <span>${escapeHtml(item.restaurant_name)} - Qty ${Number(item.quantity)}</span>
+              </div>
+              <div class="cart-item-actions">
+                <strong>${formatRp(item.subtotal)}</strong>
+                <button class="btn btn-danger btn-sm" data-remove-cart="${item.id}" aria-label="Hapus ${escapeHtml(item.menu_name)} dari cart">Hapus</button>
+              </div>
+            </div>
+          `).join('');
+        }
+        el('cartTotal').textContent = formatRp(total);
+        el('createOrderBtn').disabled = !state.cart.length || state.user?.role !== 'CUSTOMER';
+        renderStats();
+      }
+
+      function renderOrder() {
+        const target = el('orderSummary');
+        if (!state.lastOrder?.id) {
+          target.className = 'empty';
+          target.textContent = 'Belum ada order aktif.';
+          renderTimeline();
+          syncOrderActions();
+          renderStats();
+          return;
+        }
+        const status = getOrderStatus() || 'PENDING';
+        target.className = 'order-list';
+        target.innerHTML = `
+          <div class="order-row">
+            <strong>Order #${escapeHtml(state.lastOrder.id)}</strong>
+            <span>Total ${formatRp(state.lastOrder.total_price)} - Status ${escapeHtml(status)}</span>
+          </div>
+          ${state.payment ? `<div class="order-row"><strong>Payment #${escapeHtml(state.payment.id)}</strong><span>${escapeHtml(state.payment.status)} via ${escapeHtml(state.payment.payment_method)}</span></div>` : ''}
+          ${status === 'DELIVERED' ? '<div class="order-row"><strong>Pesanan selesai</strong><span>Order sudah diantar oleh kurir. Status DELIVERED adalah final.</span></div>' : ''}
+        `;
+        renderTimeline();
+        syncOrderActions();
+        renderStats();
+      }
+
+      function renderTimeline() {
+        const current = state.lastOrder?.status || '';
+        const rank = statusRank[current] ?? -1;
+        el('timeline').innerHTML = steps.map((step, index) => {
+          const done = rank > index;
+          const active = rank === index;
+          return `
+            <div class="step ${done ? 'done' : active ? 'active' : ''}">
+              <span class="dot"></span>
+              <span>${step}</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function renderDelivery() {
+        const target = el('deliveryInfo');
+        if (!state.delivery) {
+          target.className = 'empty';
+          target.textContent = 'Belum ada delivery aktif.';
+          syncCourierActions();
+          return;
+        }
+        const status = getDeliveryStatus();
+        target.className = 'order-list';
+        target.innerHTML = `
+          <div class="order-row">
+            <strong>Delivery #${escapeHtml(state.delivery.id)}</strong>
+            <span>Order #${escapeHtml(state.delivery.order_id)} - Status ${escapeHtml(status)}</span>
+          </div>
+          ${status === 'DELIVERED' ? '<div class="order-row"><strong>Pengiriman selesai</strong><span>Makanan sudah diantar ke customer. Tidak ada aksi kurir lanjutan.</span></div>' : ''}
+        `;
+        syncCourierActions();
+      }
+
+      function renderReport(report) {
+        if (!report) return;
+        el('reportContent').className = 'report-box';
+        el('reportContent').innerHTML = `
+          <div class="report-metric"><span>Users</span><strong>${report.total_users}</strong></div>
+          <div class="report-metric"><span>Restaurants</span><strong>${report.total_restaurants}</strong></div>
+          <div class="report-metric"><span>Menus</span><strong>${report.total_menus}</strong></div>
+          <div class="report-metric"><span>Orders</span><strong>${report.total_orders}</strong></div>
+          <div class="report-metric"><span>Revenue</span><strong>${formatRp(report.total_revenue)}</strong></div>
+          <div class="report-metric"><span>Status</span><strong>${report.orders_by_status?.length || 0}</strong></div>
+        `;
+      }
+
+      function renderStats() {
+        el('statRestaurants').textContent = String(state.restaurants.length);
+        el('statCart').textContent = formatRp(state.cartTotal || 0);
+        el('statOrder').textContent = state.lastOrder?.id ? `#${state.lastOrder.id}` : '-';
+      }
+
+      function pushEvent(data) {
+        state.events.unshift({ ...data, received_at: new Date().toISOString() });
+        state.events = state.events.slice(0, 30);
+
+        if (data.order_id && state.lastOrder && Number(data.order_id) === Number(state.lastOrder.id)) {
+          if (data.type === 'ORDER_CREATED') state.lastOrder.status = 'CREATED';
+          if (data.status) state.lastOrder.status = data.status;
+          localStorage.setItem('foodorder_last_order', JSON.stringify(state.lastOrder));
+          renderOrder();
+        }
+        renderEvents();
+      }
+
+      function renderEvents() {
+        el('eventCount').textContent = `${state.events.length} event`;
+        if (!state.events.length) {
+          el('eventList').innerHTML = '<div class="empty">Menunggu event realtime.</div>';
+          return;
+        }
+        el('eventList').innerHTML = state.events.map((event) => {
+          const time = new Date(event.timestamp || event.received_at).toLocaleTimeString('id-ID');
+          return `
+            <div class="event-item">
+              <div class="event-top">
+                <strong>${escapeHtml(event.type || 'EVENT')}</strong>
+                <span>${time}</span>
+              </div>
+              <span>${escapeHtml(event.message || 'Event diterima.')}</span>
+              ${event.order_id ? `<span style="display:block;margin-top:6px;">Order #${escapeHtml(event.order_id)} ${event.status ? '- ' + escapeHtml(event.status) : ''}</span>` : ''}
+            </div>
+          `;
+        }).join('');
+      }
+
+      function connectWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
+        socket.onopen = () => {
+          el('wsStatus').textContent = 'WebSocket Connected';
+          el('wsStatus').className = 'badge green';
+        };
+        socket.onclose = () => {
+          el('wsStatus').textContent = 'WebSocket Disconnected';
+          el('wsStatus').className = 'badge red';
+          window.setTimeout(connectWebSocket, 2500);
+        };
+        socket.onerror = () => {
+          el('wsStatus').textContent = 'WebSocket Error';
+          el('wsStatus').className = 'badge red';
+        };
+        socket.onmessage = (event) => {
+          try {
+            pushEvent(JSON.parse(event.data));
+          } catch {
+            pushEvent({ type: 'RAW_EVENT', message: event.data });
+          }
+        };
+      }
+
+      function bindEvents() {
+        document.querySelectorAll('[data-login]').forEach((button) => {
+          button.addEventListener('click', () => quickLogin(button.dataset.login, button));
+        });
+        el('refreshProfileBtn').addEventListener('click', loadProfile);
+        el('refreshMenuBtn').addEventListener('click', loadRestaurantsAndMenus);
+        el('refreshCartBtn').addEventListener('click', loadCart);
+        el('refreshOrdersBtn').addEventListener('click', loadOrders);
+        el('createOrderBtn').addEventListener('click', createOrder);
+        el('payBtn').addEventListener('click', payOrder);
+        el('loadDeliveryBtn').addEventListener('click', loadDelivery);
+        el('loadReportBtn').addEventListener('click', loadReport);
+        el('menuSearch').addEventListener('input', (event) => {
+          state.search = event.target.value;
+          renderMenus();
+        });
+        el('restaurantPills').addEventListener('click', (event) => {
+          const button = event.target.closest('[data-restaurant]');
+          if (!button) return;
+          state.activeRestaurant = button.dataset.restaurant;
+          renderRestaurants();
+          renderMenus();
+        });
+        el('menuGrid').addEventListener('click', (event) => {
+          const button = event.target.closest('[data-add-cart]');
+          if (!button) return;
+          addToCart(button.dataset.addCart, button);
+        });
+        el('cartList').addEventListener('click', (event) => {
+          const button = event.target.closest('[data-remove-cart]');
+          if (!button) return;
+          removeFromCart(button.dataset.removeCart, button);
+        });
+        document.querySelectorAll('[data-admin-status]').forEach((button) => {
+          button.addEventListener('click', () => adminUpdateStatus(button.dataset.adminStatus, button));
+        });
+        document.querySelectorAll('[data-delivery-status]').forEach((button) => {
+          button.addEventListener('click', () => courierUpdateStatus(button.dataset.deliveryStatus, button));
+        });
+      }
+
+      async function init() {
+        bindEvents();
+        renderSession();
+        renderProfile();
+        renderCart();
+        renderOrder();
+        renderDelivery();
+        connectWebSocket();
+        await loadRestaurantsAndMenus();
+        await Promise.allSettled([loadProfile(), loadCart(), loadOrders()]);
+      }
+
+      init();
+    </script>
+  </body>
+</html>
